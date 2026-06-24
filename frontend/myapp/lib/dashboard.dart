@@ -17,14 +17,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final String _baseUrl = "https://saferoute-intelligence-portal.onrender.com";
-  String _apiOutput =
-      "// Ready for execution. Choose a structured examiner preset from the catalog.";
-  bool _isLoading = false;
-  int _statusCode = 0;
-  String _activeRoute = "";
-  String _activeDescription = "";
-  final bool _enableAdvancedMode = false;
+  final String _baseUrl = "https://4ln04wmsgg1x.shares.zrok.io";
 
   final DateTime _yesterday = DateTime.now().subtract(const Duration(days: 1));
   final MapController _mapController = MapController();
@@ -66,6 +59,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _selectedDay = 'All Days';
     _selectedHour = 'All Hours';
 
+    // _selectedAccidentType = 0;
+    // _selectedCategory = 0;
+
+    // _selectedVehicles = [0];
+    // _selectedYear = _yesterday.year.toString();
+    // _selectedMonth = _monthOptions[_yesterday.month - 1];
+    // _selectedDay = _yesterday.day.toString();
+    // _selectedHour = _yesterday.hour.toString().padLeft(2, '0');
     _loadVehiclesType();
     _loadAccidentsType();
     _states();
@@ -207,6 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   //     return [for (var d = 1; d <= _yesterday.day; d++) d.toString()];
   //   }
   //   return [for (var d = 1; d <= dayCount; d++) d.toString()];
+
   // }
 
   List<String> get _visibleHourOptions {

@@ -83,25 +83,25 @@ def get_db_connection():
         )
 
 df1 = pd.read_csv(
-            r"https://github.com/ViratMaan/saferoute-backend/blob/main/accident_per_location_2023.csv",
+            r"C:\Users\muska\flutter_fastapi_backend\accident_fallback_data\accident_per_location_2023.csv",
     sep=";"
         )
 
 df2 = pd.read_csv(
-            r"https://github.com/ViratMaan/saferoute-backend/blob/main/accident_per_location_2021_in_Schleswig-Holstein.csv",
+            r"C:\Users\muska\flutter_fastapi_backend\accident_fallback_data\accident_per_location_2021_in_Schleswig-Holstein.csv",
     sep=";"
         )
 
 
 
 df3 = pd.read_csv(
-    r"https://github.com/ViratMaan/saferoute-backend/blob/main/accident_per_10000_per_city.csv",
+    r"C:\Users\muska\flutter_fastapi_backend\accident_fallback_data\accident_per_10000_per_city.csv",
     sep=";",
     skiprows=2
 )
 
 df4 = pd.read_csv(
-    r"https://github.com/ViratMaan/saferoute-backend/blob/main/accidents_with_persons_per_month.csv",
+    r"C:\Users\muska\flutter_fastapi_backend\accident_fallback_data\accidents_with_persons_per_month.csv",
     sep=";",
     skiprows=7
 )
