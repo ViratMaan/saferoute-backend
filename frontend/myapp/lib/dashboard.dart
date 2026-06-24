@@ -18,6 +18,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final String _baseUrl = "https://saferoute-intelligence-api.onrender.com";
+  String _apiOutput =
+      "// Ready for execution. Choose a structured examiner preset from the catalog.";
+  bool _isLoading = false;
+  int _statusCode = 0;
+  String _activeRoute = "";
+  String _activeDescription = "";
+  final bool _enableAdvancedMode = false;
 
   final DateTime _yesterday = DateTime.now().subtract(const Duration(days: 1));
   final MapController _mapController = MapController();
