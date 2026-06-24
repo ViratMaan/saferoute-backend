@@ -9,24 +9,6 @@ import 'hovercard.dart';
 import 'login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DrawerQuery {
-  DrawerQuery({
-    required this.idx,
-    required this.title,
-    required this.desc,
-    required this.route,
-    required this.color,
-    this.checked = false,
-  });
-
-  final String idx;
-  final String title;
-  final String desc;
-  final String route;
-  final Color color;
-  bool checked;
-}
-
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -35,20 +17,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final String _baseUrl = "https://saferoute-intelligence-api.onrender.com";
-  String _apiOutput =
-      "// Ready for execution. Choose a structured examiner preset from the catalog.";
-  bool _isLoading = false;
-  int _statusCode = 0;
-  String _activeRoute = "";
-  String _activeDescription = "";
-  final bool _enableAdvancedMode = false;
+  final String _baseUrl = "https://4ln04wmsgg1x.shares.zrok.io";
 
   final DateTime _yesterday = DateTime.now().subtract(const Duration(days: 1));
   final MapController _mapController = MapController();
   static const LatLng _germanyCenter = LatLng(51.1657, 10.4515);
-  final double _mapZoom = 1.5;
   List<Marker> _accidentMarkers = [];
+  List<LatLng> _polygonPoints = [];
   // raw coordinates from API: [lat, lon, severity, vehicleType?]
   List<List<dynamic>> _accidentCoordinates = [];
 
@@ -58,22 +33,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int? _selectedAccidentType;
   int? _selectedCategory;
 
+  bool get _hasFilters =>
+      _selectedState != 0 ||
+      _selectedCity != 1000000 ||
+      _selectedYear != 'All Years' ||
+      _selectedMonth != 'All Months' ||
+      _selectedDay != 'All Days' ||
+      _selectedHour != 'All Hours' ||
+      _selectedVehicles.isNotEmpty ||
+      _selectedCategory != 0 ||
+      _selectedAccidentType != -1;
+
   @override
   void initState() {
     super.initState();
-    _selectedYear = _yesterday.year.toString();
-    _selectedMonth = _monthOptions[_yesterday.month - 1];
-    _selectedDay = _yesterday.day.toString();
-    _selectedHour = _yesterday.hour.toString().padLeft(2, '0');
+    _selectedState = 0;
+
+    _cityOptions = [
+      {'id': 1000000, 'name': 'All Cities'},
+    ];
+
+    _selectedCity = 1000000;
+    _selectedYear = 'All Years';
+    _selectedMonth = 'All Months';
+    _selectedDay = 'All Days';
+    _selectedHour = 'All Hours';
+
+    // _selectedAccidentType = 0;
+    // _selectedCategory = 0;
+
+    // _selectedVehicles = [0];
+    // _selectedYear = _yesterday.year.toString();
+    // _selectedMonth = _monthOptions[_yesterday.month - 1];
+    // _selectedDay = _yesterday.day.toString();
+    // _selectedHour = _yesterday.hour.toString().padLeft(2, '0');
+    _loadVehiclesType();
     _loadAccidentsType();
     _states();
     _loadAccidentsCategories();
+    setState(() {});
   }
 
   late final List<String> _yearOptions = [
     for (var y = 2018; y <= _yesterday.year; y++) y.toString(),
   ];
   final List<String> _monthOptions = [
+    'All Months',
     'January',
     'February',
     'March',
@@ -88,7 +93,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'December',
   ];
 
-  final List<String> _vehicles = ['Car', 'Bicycle', 'Pedestrian', 'Motorcycle'];
+  List<Map<String, dynamic>> _vehicles = [];
+  List<int> _selectedVehicles = [];
 
   Map<int, List<int>> _citiesByState = {};
 
@@ -162,13 +168,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   bool get _selectedCityHasMarkers {
-    if (_selectedCity == null) return false;
+    if (_selectedCity == 0) {
+      return true;
+    }
 
-    final cityName = _cityOptions.firstWhere(
-      (e) => e['id'] == _selectedCity,
-    )['name'];
+    final city = _cityOptions.where((e) => e['id'] == _selectedCity);
 
-    return _cityHasMarker(cityName);
+    if (city.isEmpty) {
+      return false;
+    }
+
+    return true;
   }
 
   bool get _selectedStateHasMarkers => false;
@@ -206,103 +216,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final selectedMonthIndex = _monthOptions.indexOf(_selectedMonth) + 1;
 
     if (selectedYear == null || selectedDay == null) {
-      return [for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0')];
+      return [
+        'All Hours',
+        for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0'),
+      ];
     }
 
     if (selectedYear == _yesterday.year &&
         selectedMonthIndex == _yesterday.month &&
         selectedDay == _yesterday.day) {
       return [
+        'All Hours',
         for (var h = 0; h <= _yesterday.hour; h++) h.toString().padLeft(2, '0'),
       ];
     }
 
-    return [for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0')];
+    return [
+      'All Hours',
+      for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0'),
+    ];
   }
 
   List<String> get _visibleDayOptions {
     final selectedYear = int.tryParse(_selectedYear);
 
     if (selectedYear == null) {
-      return [];
+      return ['All Days'];
     }
 
     final selectedMonthIndex = _monthOptions.indexOf(_selectedMonth) + 1;
 
     if (selectedMonthIndex <= 0) {
-      return [];
+      return ['All Days'];
     }
 
     final dayCount = _daysInMonth(selectedYear, selectedMonthIndex);
 
     if (selectedYear == _yesterday.year &&
         selectedMonthIndex == _yesterday.month) {
-      return [for (var d = 1; d <= _yesterday.day; d++) d.toString()];
+      return [
+        'All Days',
+        for (var d = 1; d <= _yesterday.day; d++) d.toString(),
+      ];
     }
 
-    return [for (var d = 1; d <= dayCount; d++) d.toString()];
+    return ['All Days', for (var d = 1; d <= dayCount; d++) d.toString()];
   }
-
-  // List<String> get _visibleHourOptions {
-  //   final selectedYear = int.parse(_selectedYear);
-  //   final selectedMonthIndex = _monthOptions.indexOf(_selectedMonth) + 1;
-  //   final selectedDay = int.parse(_selectedDay);
-  //   if (selectedYear == _yesterday.year &&
-  //       selectedMonthIndex == _yesterday.month &&
-  //       selectedDay == _yesterday.day) {
-  //     return [
-  //       for (var h = 0; h <= _yesterday.hour; h++) h.toString().padLeft(2, '0'),
-  //     ];
-  //   }
-  //   return [for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0')];
-  // }
 
   String _selectedYear = '';
   String _selectedMonth = '';
   String _selectedDay = '';
   String _selectedHour = '';
-
-  // Per-item checkbox selections in the drawer list
-  final List<DrawerQuery> _drawerQueries = [
-    DrawerQuery(
-      idx: 'Q1',
-      title: 'Earliest Accident Year',
-      desc: 'Calculates global baseline timeline minimum.',
-      route: '/accidents/time/earliest',
-      color: const Color(0xFF38BDF8),
-    ),
-    DrawerQuery(
-      idx: 'Q2',
-      title: 'Saxony 2023 Injury Matrix',
-      desc:
-          'Aggregates counts restricted strictly to Saxony and true injuries.',
-      route: '/aggregates/accidents?state=SN&year=2023&injury=true',
-      color: const Color(0xFF34D399),
-    ),
-    DrawerQuery(
-      idx: 'Q3',
-      title: 'NRW Coverage Timeline',
-      desc: 'Minimum record index year localized to North Rhine-Westphalia.',
-      route: '/accidents/time/earliest?state=NW',
-      color: const Color(0xFFFB923C),
-    ),
-    DrawerQuery(
-      idx: 'Q4',
-      title: 'Mecklenburg Timeline',
-      desc:
-          'Minimum record index year localized to Mecklenburg-Western Pomerania.',
-      route: '/accidents/time/earliest?state=MV',
-      color: const Color(0xFFF472B6),
-    ),
-    DrawerQuery(
-      idx: 'Q5',
-      title: 'Berlin Pedestrians (2023)',
-      desc:
-          'Filters occurrences intersecting Berlin regional keys with pedestrians.',
-      route: '/aggregates/accidents?state=BE&year=2023&participant=pedestrian',
-      color: const Color(0xFF60A5FA),
-    ),
-  ];
 
   Future<void> _showLogoutDialog() async {
     final shouldLogout = await showDialog<bool>(
@@ -344,80 +308,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _executeQuery(String endpoint, String title, String desc) async {
-    setState(() {
-      _isLoading = true;
-      _activeRoute = endpoint;
-      _activeDescription = desc;
-      _apiOutput =
-          "/* TRANSMITTING REQUEST TO BACKEND HARDWARE LAYER */\nGET $_baseUrl$endpoint ...";
-    });
-
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl$endpoint'));
-      setState(() {
-        _statusCode = response.statusCode;
-        if (response.statusCode == 200) {
-          var decodedJson = json.decode(utf8.decode(response.bodyBytes));
-          _apiOutput = const JsonEncoder.withIndent('  ').convert(decodedJson);
-        } else {
-          _apiOutput =
-              "/* ERROR RESPONSE RECEIVED FROM BACKEND PIPELINE */\n\nHTTP STATUS: $_statusCode\n\nPayload:\n${response.body}";
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _statusCode = 0;
-        _apiOutput =
-            "/* PIPELINE CONNECTION TIMEOUT / PROTOCOL ERROR */\n\n"
-            "Could not connect to: $_baseUrl$endpoint\n\n"
-            "Troubleshooting Steps:\n"
-            "1. Confirm your student-built backend web service container is fully operational on port 8080.\n"
-            "2. If compiling for Flutter Web, make sure CORS configurations are active.\n\n"
-            "System Logs:\n$e";
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   Future<void> _loadAccidentsFilter() async {
-    final url = Uri.parse('$_baseUrl/accidents/filter').replace(
-      queryParameters: {
-        if (_selectedState != null) 'state': _selectedState.toString(),
+    final queryParameters = {
+      if (_selectedState != 0) 'state': _selectedState.toString(),
 
-        if (_selectedCity != null) 'city': _selectedCity.toString(),
+      if (_selectedCity != 1000000) 'city': _selectedCity.toString(),
 
-        'year': _selectedYear,
+      if (_selectedYear != 'All Years') 'year': _selectedYear,
 
+      if (_selectedMonth != 'All Months')
         'month': (_monthOptions.indexOf(_selectedMonth) + 1).toString(),
 
-        'day': _selectedDay,
+      if (_selectedDay != 'All Days') 'day': _selectedDay,
 
-        'hour': _selectedHour,
+      if (_selectedHour != 'All Hours') 'hour': _selectedHour,
 
-        if (_selectedAccidentType != null)
-          'accident_type': _selectedAccidentType.toString(),
+      if (_selectedCategory != 0) 'category': _selectedCategory.toString(),
 
-        if (_selectedCategory != null) 'category': _selectedCategory.toString(),
+      if (_selectedAccidentType != -1)
+        'accident_type': _selectedAccidentType.toString(),
+    };
+    final url = Uri.parse(
+      '$_baseUrl/accidents/filter',
+    ).replace(queryParameters: queryParameters);
 
-        if (_vehicles != []) 'vehicle_type': _vehicles,
+    // final finalUrl = url.replace(
+    //   queryParameters: {
+    //     ...url.queryParameters,
+    //     for (int i = 0; i < _selectedVehicles.length; i++)
+    //       'vehicle_type[$i]': _selectedVehicles[i].toString(),
+    //   },
+    // );
+
+    final finalUrl = url.replace(
+      queryParameters: {
+        ...url.queryParameters.map((k, v) => MapEntry(k, [v])),
+        'vehicle_type': _selectedVehicles.map((e) => e.toString()).toList(),
       },
     );
-    try {
-      final response = await http.get(url);
+    // // add vehicle types separately
+    // final finalUrl = _vehicles.isNotEmpty
+    //     ? Uri.parse('$url&${_vehicles.map((e) => 'vehicle_type=$e').join('&')}')
+    //     : url;
 
+    try {
+      final response = await http.get(finalUrl);
+      final markers = <Marker>[];
+      final polygonPoints = <LatLng>[];
+
+      print('URL: $finalUrl');
       print('Status: ${response.statusCode}');
       print('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
 
-        print('Loaded ${data}');
-        print('Status: ${response.statusCode}');
-        print('Response: ${response.body}');
+        print('Loaded ${data.length} accidents');
+        final markers = <Marker>[];
+        final polygonPoints = <LatLng>[];
+
+        for (final item in data) {
+          final lat = (item['lat'] as num).toDouble();
+          final lon = (item['lon'] as num).toDouble();
+
+          final point = LatLng(lat, lon);
+          polygonPoints.add(point);
+
+          markers.add(
+            Marker(
+              point: point,
+              width: 40,
+              height: 40,
+              child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+            ),
+          );
+        }
+        setState(() {
+          _accidentMarkers = markers;
+          _polygonPoints = polygonPoints;
+          if (polygonPoints.isNotEmpty) {
+            final bounds = LatLngBounds.fromPoints(polygonPoints);
+
+            _mapController.fitCamera(
+              CameraFit.bounds(
+                bounds: bounds,
+                padding: const EdgeInsets.all(50),
+              ),
+            );
+          }
+        });
+        print(_accidentCoordinates);
+        print(_accidentMarkers);
+        print(_polygonPoints);
       }
     } catch (e) {
       print('ERROR: $e');
@@ -436,7 +418,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         _accidentsTypes = List<Map<String, dynamic>>.from(data);
         if (_accidentsTypes.isNotEmpty) {
-          _selectedAccidentType = _accidentsTypes.first['id'];
+          _selectedAccidentType = -1;
+          // _selectedAccidentType = _accidentsTypes.first['id'];
+        }
+        setState(() {});
+
+        print('Loaded ${data}');
+        print('Status: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (e) {
+      print('ERROR: $e');
+    }
+  }
+
+  Future<void> _loadVehiclesType() async {
+    final url = Uri.parse('$_baseUrl/vehicleTypes');
+    try {
+      final response = await http.get(url);
+
+      print('Status: ${response.statusCode}');
+      print('BodyAccidentTypes: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        _vehicles = List<Map<String, dynamic>>.from(data);
+        if (_vehicles.isNotEmpty) {
+          _selectedVehicles = [];
         }
         setState(() {});
 
@@ -460,9 +468,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
         _categories = List<Map<String, dynamic>>.from(data);
-        if (_categories.isNotEmpty) {
-          _selectedCategory = _categories.first['id'];
-        }
+        _selectedCategory = 0;
+        // if (_categories.isNotEmpty) {
+        //   _selectedCategory = _categories.first['id'];
+        // }
         setState(() {});
 
         print('Loaded ${data}');
@@ -484,7 +493,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        _stateOptions = List<Map<String, dynamic>>.from(data);
+        // _stateOptions = List<Map<String, dynamic>>.from(data);
+        _stateOptions = [
+          {'id': 0, 'name': 'All States'},
+          ...List<Map<String, dynamic>>.from(data),
+        ];
         if (_stateOptions.isNotEmpty) {
           _selectedState = _stateOptions.first['id'];
         }
@@ -499,41 +512,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Future<void> _cities() async {
-  //   final url = Uri.parse(
-  //     '$_baseUrl/cities',
-  //   ).replace(queryParameters: {'state': _selectedState.toString()});
-
-  //   try {
-  //     final response = await http.get(url);
-
-  //     print('Status: ${response.statusCode}');
-  //     print('BodyCities: ${response.body}');
-
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(utf8.decode(response.bodyBytes));
-  //       _citiesByState[_selectedState.toString()] = List<Map<String, dynamic>>.from(data);
-  //       if (_citiesByState[_selectedState.toString()] != null &&
-  //           _citiesByState[_selectedState.toString()]!.isNotEmpty) {
-  //         _selectedCity = _citiesByState[_selectedState.toString()]!.first;
-  //       }
-  //       setState(() {
-  //         if (_visibleCityOptions.isNotEmpty) {
-  //           _selectedCity = _visibleCityOptions.first;
-  //         } else {
-  //           _selectedCity = '';
-  //         }
-  //       });
-
-  //       print('Loaded ${data}');
-  //       print('Status: ${response.statusCode}');
-  //       print('Response: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print('ERROR: $e');
-  //   }
-  // }
-
   Future<void> _cities() async {
     final url = Uri.parse(
       '$_baseUrl/cities',
@@ -546,11 +524,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final List data = json.decode(utf8.decode(response.bodyBytes));
 
         setState(() {
-          _cityOptions = List<Map<String, dynamic>>.from(data);
-
-          _selectedCity = _cityOptions.isNotEmpty
-              ? _cityOptions.first['id']
-              : null;
+          // _cityOptions = List<Map<String, dynamic>>.from(data);
+          _cityOptions = [
+            {'id': 1000000, 'name': 'All Cities'},
+            ...List<Map<String, dynamic>>.from(data),
+          ];
+          _selectedCity = 1000000;
         });
         print('$data');
         print('$_cityOptions');
@@ -714,6 +693,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         letterSpacing: 0.8,
                       ),
                     ),
+
                     Align(
                       alignment: Alignment.topRight,
                       child: IconButton(
@@ -725,6 +705,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedState = 0;
+                            _selectedCity = 1000000;
+                            _selectedYear = 'All Years';
+                            _selectedMonth = 'All Months';
+                            _selectedDay = 'All Days';
+                            _selectedHour = 'All Hours';
+                            _selectedVehicles.clear();
+                            _selectedCategory = 0;
+                            _selectedAccidentType = -1;
+                          });
+
+                          _loadAccidentsFilter();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10.0),
+                          child: Text(
+                            'Clear Filters',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                if (_hasFilters)
+                  Text(
+                    'Selected Filters',
+                    style: TextStyle(
+                      color: Color(0xFF38BDF8),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+
+                if (_hasFilters) const SizedBox(height: 10),
+                if (_hasFilters)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: _buildSelectedFilters(),
+                  ),
                 const SizedBox(height: 20),
                 _buildSectionHeader(
                   'German Region Selection',
@@ -772,7 +805,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 : null,
                           ),
                           child: DropdownButton<int>(
-                            value: _selectedState,
+                            value:
+                                _stateOptions.any(
+                                  (e) => e['id'] == _selectedState,
+                                )
+                                ? _selectedState
+                                : 0,
                             dropdownColor: const Color(0xFF1E293B),
                             isExpanded: true,
                             underline: const SizedBox(),
@@ -794,6 +832,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 _selectedState = value;
                               });
                               _cities();
+                              _loadAccidentsFilter();
                             },
                             style: const TextStyle(color: Colors.white),
                             iconEnabledColor: Colors.white,
@@ -802,20 +841,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  // child: DropdownButton<int>(
-                  //   value: _selectedState,
-                  //   items: _stateOptions.map((state) {
-                  //     return DropdownMenuItem<int>(
-                  //       value: state['id'],
-                  //       child: Text(state['name']),
-                  //     );
-                  //   }).toList(),
-                  //   onChanged: (value) {
-                  //     setState(() {
-                  //       _selectedState = value;
-                  //     });
-                  //   },
-                  // ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -861,7 +886,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 : null,
                           ),
                           child: DropdownButton<int>(
-                            value: _selectedCity,
+                            value:
+                                _cityOptions.any(
+                                  (e) => e['id'] == _selectedCity,
+                                )
+                                ? _selectedCity
+                                : 0,
                             dropdownColor: const Color(0xFF1E293B),
                             isExpanded: true,
                             underline: const SizedBox(),
@@ -883,6 +913,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               setState(() {
                                 _selectedCity = value;
                               });
+                              _loadAccidentsFilter();
                             },
                             style: const TextStyle(color: Colors.white),
                             iconEnabledColor: Colors.white,
@@ -901,16 +932,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   //   }),
                   //   highlight: _selectedCityHasMarkers,
                   // ),
-                ),
-                const SizedBox(height: 12),
-
-                Text(
-                  'Selected Region: $_selectedState • $_selectedCity',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
                 const SizedBox(height: 20),
                 _buildSectionHeader(
@@ -935,6 +956,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (!_visibleHourOptions.contains(_selectedHour)) {
                         _selectedHour = _visibleHourOptions.last;
                       }
+                      _loadAccidentsFilter();
                     }),
                   ),
                 ),
@@ -969,6 +991,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (!_visibleHourOptions.contains(_selectedHour)) {
                         _selectedHour = _visibleHourOptions.last;
                       }
+                      _loadAccidentsFilter();
                     }),
                   ),
                 ),
@@ -983,18 +1006,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _visibleHourOptions,
                     (value) => setState(() {
                       _selectedHour = value ?? _selectedHour;
+                      _loadAccidentsFilter();
                     }),
                   ),
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  'Selected: $_selectedYear • $_selectedMonth • $_selectedDay • ${_selectedHour}h',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+
                 const SizedBox(height: 20),
                 _buildSectionHeader(
                   'Accident Types',
@@ -1009,98 +1025,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: HoverTranslateCard(
                         route: _accidentsTypes[idx]['name'],
-                        isActive: _activeRoute == _accidentsTypes[idx]['name'],
-                        color: Color(0x255952),
-                        onTap: () => _executeQuery(
-                          _accidentsTypes[idx]['name'],
-                          _accidentsTypes[idx]['id'],
-                          _accidentsTypes[idx]['name'],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Checkbox(
-                            //   value: query.checked,
-                            //   onChanged: (value) {
-                            //     setState(() {
-                            //       query.checked = value ?? false;
-                            //     });
-                            //   },
-                            //   activeColor: query.color,
-                            //   checkColor: Colors.white,
-                            // ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                // color: _accidentsTypes[idx]['name'].color.withAlpha(
-                                //   (0.15 * 255).round(),
-                                // ),
-                                color: Color(
-                                  0x568458,
-                                ).withAlpha((0.15 * 255).round()),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                  color: Color(
-                                    0x845545,
-                                  ).withAlpha((0.4 * 255).round()),
-                                  // color: _accidentsTypes[idx]['name'].color
-                                  //     .withAlpha((0.4 * 255).round()),
-                                ),
-                              ),
-                              child: Text(
-                                _accidentsTypes[idx]['id'].toString(),
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Consolas',
-                                ),
-                              ),
+                        isActive:
+                            _selectedAccidentType == _accidentsTypes[idx]['id'],
+                        color: Colors.green,
+                        onTap: () {
+                          setState(() {
+                            _selectedAccidentType = _accidentsTypes[idx]['id'];
+                          });
+
+                          _loadAccidentsFilter();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(
+                            _accidentsTypes[idx]['name'],
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _accidentsTypes[idx]['name'],
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _accidentsTypes[idx]['name'],
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade400,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _accidentsTypes[idx]['name'],
-                                    style: const TextStyle(
-                                      fontFamily: 'Consolas',
-                                      fontSize: 11,
-                                      color: Color(0xFF0EA5E9),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.play_circle_fill,
-                              size: 18,
-                              color: Colors.grey,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     );
@@ -1115,10 +1059,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemBuilder: (context, idx) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: _buildEndpointTile(
-                        _categories[idx]['id'].toString(),
-                        _categories[idx]['name'],
-                        'GET',
+                      child: HoverTranslateCard(
+                        route: _categories[idx]['name'],
+                        isActive: _selectedCategory == _categories[idx]['id'],
+                        color: Colors.orange,
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory = _categories[idx]['id'];
+                          });
+
+                          _loadAccidentsFilter();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(_categories[idx]['name']),
+                        ),
                       ),
                     );
                   },
@@ -1130,18 +1085,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shrinkWrap: true,
                   itemCount: _vehicles.length,
                   itemBuilder: (context, idx) {
-                    return HoverTranslateCard(
-                      route: _vehicles[idx].toString(),
-                      isActive: _activeRoute == _vehicles[idx].toString(),
-                      color: Colors.white10,
-                      onTap: () => _executeQuery(
-                        _vehicles[idx].toString(),
-                        _vehicles[idx].toString(),
-                        _vehicles[idx].toString(),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text(_vehicles[idx].toString()),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: HoverTranslateCard(
+                        route: _vehicles[idx]['name'].toString(),
+                        isActive: _selectedVehicles.contains(
+                          _vehicles[idx]['id'],
+                        ),
+                        color: Colors.white10,
+                        onTap: () {
+                          final id = _vehicles[idx]['id'];
+
+                          setState(() {
+                            if (_selectedVehicles.contains(id)) {
+                              _selectedVehicles.remove(id);
+                            } else {
+                              _selectedVehicles.add(id);
+                            }
+                          });
+                          _loadAccidentsFilter();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(_vehicles[idx]['name']),
+                        ),
                       ),
                     );
                   },
@@ -1250,6 +1217,154 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildSelectedFilters() {
+    final List<Widget> chips = [];
+
+    if (_selectedState != 0) {
+      final state = _stateOptions.firstWhere(
+        (e) => e['id'] == _selectedState,
+        orElse: () => {'name': ''},
+      );
+
+      chips.add(
+        _buildFilterChip(state['name'], () {
+          setState(() {
+            _selectedState = null;
+            _selectedCity = null;
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedCity != 1000000) {
+      final city = _cityOptions.firstWhere(
+        (e) => e['id'] == _selectedCity,
+        orElse: () => {'name': ''},
+      );
+
+      chips.add(
+        _buildFilterChip(city['name'], () {
+          setState(() {
+            _selectedCity = null;
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedYear != 'All Years') {
+      chips.add(
+        _buildFilterChip(_selectedYear, () {
+          setState(() {
+            _selectedYear = '';
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedMonth != 'All Months') {
+      chips.add(
+        _buildFilterChip(_selectedMonth, () {
+          setState(() {
+            _selectedMonth = '';
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedDay != 'All Days') {
+      chips.add(
+        _buildFilterChip('Day $_selectedDay', () {
+          setState(() {
+            _selectedDay = '';
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedHour != 'All Hours') {
+      chips.add(
+        _buildFilterChip('${_selectedHour}:00', () {
+          setState(() {
+            _selectedHour = '';
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedCategory != 0) {
+      final category = _categories.firstWhere(
+        (e) => e['id'] == _selectedCategory,
+        orElse: () => {'name': ''},
+      );
+
+      chips.add(
+        _buildFilterChip(category['name'], () {
+          setState(() {
+            _selectedCategory = 0;
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (_selectedAccidentType != -1) {
+      final type = _accidentsTypes.firstWhere(
+        (e) => e['id'] == _selectedAccidentType,
+        orElse: () => {'name': ''},
+      );
+
+      chips.add(
+        _buildFilterChip(type['name'], () {
+          setState(() {
+            _selectedAccidentType = 0;
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    for (final vehicleId in _selectedVehicles) {
+      final vehicle = _vehicles.firstWhere(
+        (e) => e['id'] == vehicleId,
+        orElse: () => {'name': ''},
+      );
+
+      chips.add(
+        _buildFilterChip(vehicle['name'], () {
+          setState(() {
+            _selectedVehicles.remove(vehicleId);
+          });
+          _loadAccidentsFilter();
+        }),
+      );
+    }
+
+    if (chips.isEmpty) {
+      return Text(
+        'No filters selected',
+        style: TextStyle(color: Colors.grey.shade500),
+      );
+    }
+
+    return Wrap(spacing: 8, runSpacing: 8, children: chips);
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onDeleted) {
+    return Chip(
+      label: Text(label, style: const TextStyle(color: Colors.white)),
+      deleteIcon: const Icon(Icons.close, color: Colors.white, size: 18),
+      onDeleted: onDeleted,
+      backgroundColor: const Color(0xFF1E293B),
+      side: const BorderSide(color: Color(0xFF38BDF8)),
+    );
+  }
+
   Widget _buildSectionHeader(String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14.0),
@@ -1286,10 +1401,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter: _cityCenters[_selectedCity] ?? _germanyCenter,
-                initialZoom: _mapZoom,
-                minZoom: 4,
-                maxZoom: 12,
+                initialCenter: _germanyCenter,
+                initialZoom: 6,
               ),
               children: [
                 TileLayer(
@@ -1301,7 +1414,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   PolygonLayer(
                     polygons: [
                       Polygon(
-                        points: _cityPolygon(_selectedCity.toString()),
+                        points: _polygonPoints,
                         color: Colors.blue.withOpacity(0.25),
                         borderColor: Colors.blueAccent.withOpacity(0.9),
                         borderStrokeWidth: 3,
@@ -1331,7 +1444,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             height: 32,
                             point: _germanyCenter,
                             child: const Icon(
-                              Icons.location_on,
+                              Icons.circle,
                               color: Color(0xFF38BDF8),
                               size: 32,
                             ),
@@ -1344,301 +1457,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // Vehicle type toggles (top-left)
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInteractiveQueryCard({
-    required String idx,
-    required String title,
-    required String desc,
-    required String route,
-    required Color color,
-  }) {
-    bool isActive = _activeRoute == route;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF1E293B) : const Color(0xFF151F32),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isActive ? color : const Color(0xFF22314D),
-          width: isActive ? 1.5 : 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: () => _executeQuery(route, title, desc),
-          hoverColor: const Color(0xFF1E293B),
-          child: Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha((0.15 * 255).round()),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: color.withAlpha((0.4 * 255).round()),
-                    ),
-                  ),
-                  child: Text(
-                    idx,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Consolas',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        desc,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade400,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        route,
-                        style: const TextStyle(
-                          fontFamily: 'Consolas',
-                          fontSize: 11,
-                          color: Color(0xFF0EA5E9),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Padding(
-                  padding: EdgeInsets.only(top: 2.0),
-                  child: Icon(
-                    Icons.play_circle_fill,
-                    size: 20,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEndpointTile(String label, String route, String verb) {
-    bool isActive = _activeRoute == route;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF1E293B) : const Color(0xFF131B2E),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isActive
-                  ? const Color(0xFF0EA5E9)
-                  : const Color(0xFF1E293B),
-            ),
-          ),
-          child: ListTile(
-            dense: true,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            tileColor: Colors.transparent,
-            onTap: () => _executeQuery(
-              route,
-              label,
-              'System core data layer endpoint lookup query.',
-            ),
-            leading: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0EA5E9).withAlpha((0.15 * 255).round()),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                verb,
-                style: const TextStyle(
-                  fontFamily: 'Consolas',
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0EA5E9),
-                  fontSize: 10,
-                ),
-              ),
-            ),
-            title: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            subtitle: Text(
-              route,
-              style: TextStyle(
-                fontFamily: 'Consolas',
-                fontSize: 11,
-                color: Colors.grey.shade500,
-              ),
-            ),
-            trailing: const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 12,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Widget _buildConsoleHeaderPanel() {
-  //   Color chipColor = _statusCode == 200
-  //       ? const Color(0xFF10B981)
-  //       : const Color(0xFFEF4444);
-  //   if (_statusCode == 0) chipColor = Colors.grey;
-
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //     children: [
-  //       Row(
-  //         children: [
-  //           const Icon(Icons.terminal_rounded, color: Colors.grey, size: 20),
-  //           const SizedBox(width: 8),
-  //           const Text(
-  //             'Isolated REST Response Matrix',
-  //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-  //           ),
-  //         ],
-  //       ),
-  //       Container(
-  //         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-  //         decoration: BoxDecoration(
-  //           color: chipColor.withAlpha((0.15 * 255).round()),
-  //           borderRadius: BorderRadius.circular(6),
-  //           border: Border.all(color: chipColor.withAlpha((0.4 * 255).round())),
-  //         ),
-  //         child: Text(
-  //           _statusCode == 0 ? 'READY' : 'HTTP STATUS: $_statusCode',
-  //           style: TextStyle(
-  //             color: chipColor,
-  //             fontFamily: 'Consolas',
-  //             fontSize: 11,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // ignore: unused_element
-  Widget _buildAnimatedQueryCard(
-    String idx,
-    String title,
-    String desc,
-    String route,
-    Color color,
-    bool enableAdvancedMode,
-  ) {
-    return HoverTranslateCard(
-      route: route,
-      isActive: _activeRoute == route,
-      color: color,
-      onTap: () => _executeQuery(route, title, desc),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Checkbox(
-          //   value: enableAdvancedMode,
-          //   onChanged: (value) {
-          //     setState(() => _enableAdvancedMode = value ?? false);
-          //   },
-          //   activeColor: const Color(0xFF0EA5E9),
-          //   checkColor: Colors.white,
-          // ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withAlpha((0.15 * 255).round()),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: color.withAlpha((0.4 * 255).round())),
-            ),
-            child: Text(
-              idx,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Consolas',
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  desc,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade400,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  route,
-                  style: const TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 11,
-                    color: Color(0xFF0EA5E9),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.play_circle_fill, size: 18, color: Colors.grey),
-        ],
       ),
     );
   }
