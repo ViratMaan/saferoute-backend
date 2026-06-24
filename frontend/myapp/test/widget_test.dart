@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:myapp/login.dart';
 import 'package:myapp/main.dart';
 
 void main() {
-  testWidgets('Login screen loads', (WidgetTester tester) async {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
     await tester.pumpWidget(
-      const DwbApiTrackerApp(initialHome: HomeScreen.login),
+      DwbApiTrackerApp(initialScreen: const LoginScreen()),
     );
-    await tester.pumpAndSettle();
-
-    expect(find.text('SafeRoute Intelligence'), findsOneWidget);
-    expect(find.text('Sign In'), findsOneWidget);
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
   });
 }

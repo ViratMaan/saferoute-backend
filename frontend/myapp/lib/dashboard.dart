@@ -66,14 +66,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _selectedDay = 'All Days';
     _selectedHour = 'All Hours';
 
-    // _selectedAccidentType = 0;
-    // _selectedCategory = 0;
-
-    // _selectedVehicles = [0];
-    // _selectedYear = _yesterday.year.toString();
-    // _selectedMonth = _monthOptions[_yesterday.month - 1];
-    // _selectedDay = _yesterday.day.toString();
-    // _selectedHour = _yesterday.hour.toString().padLeft(2, '0');
     _loadVehiclesType();
     _loadAccidentsType();
     _states();
