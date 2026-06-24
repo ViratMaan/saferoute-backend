@@ -14,7 +14,7 @@ jobs:
           cd frontend/myapp
           flutter pub get
           flutter build web --web-renderer html --base-href "/${{ github.event.repository.name }}/"
-      - uses: Actions-deploy-pages/GitHub-Pages-deploy-action@v4
+      - uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: frontend/myapp/build/web
           branch: gh-pages
