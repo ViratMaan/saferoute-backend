@@ -16,12 +16,14 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _passwordVisible = false;
+  bool _correctpasswordVisible = false;
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   late final AnimationController _transitionController;
   late final Animation<double> _cardScale;
 
-  final String _baseUrl = 'https://w42ldgcu6mcb.shares.zrok.io';
+  final String _baseUrl = 'https://saferoute-intelligence-api.onrender.com';
   bool _showRegister = false;
   bool _isLoading = false;
   String? _authError;
@@ -36,6 +38,29 @@ class _LoginScreenState extends State<LoginScreen>
     _cardScale = Tween<double>(begin: 0.96, end: 1.0).animate(
       CurvedAnimation(parent: _transitionController, curve: Curves.easeOutBack),
     );
+    _checkExistingToken();
+  }
+
+  Future<void> _checkExistingToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    if (token != null && token.isNotEmpty) {
+      // Token exists, auto-navigate to dashboard
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 500),
+            pageBuilder: (_, animation, secondaryAnimation) {
+              return FadeTransition(
+                opacity: animation,
+                child: const DashboardScreen(),
+              );
+            },
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -121,7 +146,10 @@ class _LoginScreenState extends State<LoginScreen>
     final url = Uri.parse('$_baseUrl/api/auth/login');
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        "Authorization": "bearer $token",
+        'Content-Type': 'application/json',
+      },
       body: jsonEncode({
         'username': _nameController.text.trim(),
         'password': _passwordController.text,
@@ -254,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen>
                 children: [
                   const SizedBox(height: 24),
                   Text(
-                    'Accident Intelligence',
+                    'SafeRoute Intelligence',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -382,6 +410,7 @@ class _LoginScreenState extends State<LoginScreen>
                               controller: _nameController,
                               label: 'Full Name',
                               hint: 'Jane Doe',
+                              suffixIcon: null,
                               icon: Icons.person_outline,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -403,6 +432,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         controller: _emailController,
                                         label: 'Email',
                                         hint: 'you@example.com',
+                                        suffixIcon: null,
                                         icon: Icons.email_outlined,
                                         keyboardType:
                                             TextInputType.emailAddress,
@@ -411,13 +441,29 @@ class _LoginScreenState extends State<LoginScreen>
                                     )
                                   : const SizedBox.shrink(),
                             ),
+
                             _buildTextField(
                               controller: _passwordController,
                               label: 'Password',
                               hint: '••••••••',
                               icon: Icons.lock_outline,
-                              obscureText: true,
+                              obscureText: _passwordVisible,
                               validator: _validatePassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  // Based on passwordVisible state choose the icon
+                                  _passwordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () {
+                                  // Update the state i.e. toogle the state of passwordVisible variable
+                                  setState(() {
+                                    _passwordVisible = !_passwordVisible;
+                                  });
+                                },
+                              ),
                             ),
                             AnimatedCrossFade(
                               firstChild: const SizedBox.shrink(),
@@ -430,8 +476,24 @@ class _LoginScreenState extends State<LoginScreen>
                                   controller: _confirmPasswordController,
                                   label: 'Confirm Password',
                                   hint: '••••••••',
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      // Based on passwordVisible state choose the icon
+                                      _correctpasswordVisible
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed: () {
+                                      // Update the state i.e. toogle the state of passwordVisible variable
+                                      setState(() {
+                                        _correctpasswordVisible =
+                                            !_correctpasswordVisible;
+                                      });
+                                    },
+                                  ),
                                   icon: Icons.lock_clock,
-                                  obscureText: true,
+                                  obscureText: _correctpasswordVisible,
                                   validator: _validateConfirmPassword,
                                 ),
                               ),
@@ -539,6 +601,7 @@ class _LoginScreenState extends State<LoginScreen>
     required String hint,
     required IconData icon,
     bool obscureText = false,
+    Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
@@ -554,6 +617,7 @@ class _LoginScreenState extends State<LoginScreen>
         prefixIcon: Icon(icon, color: Colors.white70),
         filled: true,
         fillColor: const Color(0xFF12243E),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
