@@ -1,5 +1,8 @@
-.env
-__pycache__/
-*.pyc
-frontend/myapp/build/
-frontend/myapp/.dart_tool/
+fastapi
+uvicorn
+gunicorn
+pandas
+psycopg2-binary
+sqlalchemy
+python-dotenv
+python-jose[cryptography]
