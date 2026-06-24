@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen>
   late final AnimationController _transitionController;
   late final Animation<double> _cardScale;
 
-  final String _baseUrl = 'https://clgvntsa7cq9.shares.zrok.io';
+  final String _baseUrl = 'https://saferoute-intelligence-api.onrender.com';
   bool _showRegister = false;
   bool _isLoading = false;
   String? _authError;
