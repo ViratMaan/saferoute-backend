@@ -9,3 +9,4 @@ pydantic
 pydantic[email]
 pandas
 sqlalchemy
+python-jose[cryptography]
