@@ -17,7 +17,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final String _baseUrl = "https://saferoute-intelligence-api.onrender.com";
+  final String _baseUrl = "https://saferoute-intelligence-portal.onrender.com";
   String _apiOutput =
       "// Ready for execution. Choose a structured examiner preset from the catalog.";
   bool _isLoading = false;
