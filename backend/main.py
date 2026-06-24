@@ -89,9 +89,9 @@ try:
     df4 = pd.read_csv(os.path.join(DATA_DIR, "accidents_with_persons_per_month.csv"), sep=";", skiprows=7)
     
     df = pd.concat([df1, df2, df3, df4], ignore_index=True)
-    print(f"✅ Successfully imported {len(df)} rows from fallback CSV files.")
+    print(f" Successfully imported {len(df)} rows from fallback CSV files.")
 except Exception as e:
-    print(f"⚠️ Warning: Local CSV fallback files couldn't load: {e}")
+    print(f" Warning: Local CSV fallback files couldn't load: {e}")
     # Fallback initialization to prevent backend crashes if files are completely missing
     df = pd.DataFrame()
     df3 = pd.DataFrame(columns=["schluessel", "regionaleinheit"])
