@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
+import 'login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard.dart';
-import 'login.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('access_token');
+
   runApp(
     DwbApiTrackerApp(
-      initialHome: token != null && token.isNotEmpty
-          ? HomeScreen.dashboard
-          : HomeScreen.login,
+      initialScreen: token != null && token.isNotEmpty
+          ? const DashboardScreen()
+          : const LoginScreen(),
     ),
   );
 }
 
-enum HomeScreen { login, dashboard }
-
 class DwbApiTrackerApp extends StatelessWidget {
-  const DwbApiTrackerApp({super.key, required this.initialHome});
-
-  final HomeScreen initialHome;
+  final Widget initialScreen;
+  const DwbApiTrackerApp({super.key, required this.initialScreen});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SafeRoute Intelligence',
+      title: 'DBW Accident Integration Hub',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
@@ -43,9 +42,7 @@ class DwbApiTrackerApp extends StatelessWidget {
         ),
         fontFamily: 'Segoe UI',
       ),
-      home: initialHome == HomeScreen.dashboard
-          ? const DashboardScreen()
-          : const LoginScreen(),
+      home: initialScreen,
     );
   }
 }
