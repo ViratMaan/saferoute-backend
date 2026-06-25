@@ -173,6 +173,29 @@ def get_vehicle_types():
 
 vehicle_map = {item["id"]: item["column"] for item in vehicle_types}
 
+# Translate UI dropdown values to official German ULAND codes
+UI_TO_GERMAN_STATE = {
+    1: 8,   # Baden-Württemberg
+    2: 9,   # Bayern
+    3: 11,  # Berlin
+    4: 12,  # Brandenburg
+    5: 4,   # Bremen
+    6: 2,   # Hamburg
+    7: 6,   # Hessen
+    8: 13,  # Mecklenburg-Vorpommern
+    9: 3,   # Niedersachsen
+    10: 5,  # Nordrhein-Westfalen
+    11: 7,  # Rheinland-Pfalz
+    12: 10, # Saarland
+    13: 14, # Sachsen
+    14: 15, # Sachsen-Anhalt
+    15: 1,  # Schleswig-Holstein
+    16: 16, # Thüringen
+}
+
+if state is not None and state != 0:
+    actual_uland = UI_TO_GERMAN_STATE.get(state, state)
+    query += ' AND a."ULAND"::integer = %s'; params.append(actual_uland)
 
 @app.get("/accidents/filter")
 def get_accidents(
@@ -185,7 +208,7 @@ def get_accidents(
     accident_type: int | None = None,
     category: int | None = None,
     vehicle_type: List[str] = Query(None),
-    limit: int = Query(2000, ge=1, le=5000)
+    # limit: int = Query(2000, ge=1, le=5000)
 ):
     try:
         conn = get_db_connection()
@@ -200,10 +223,14 @@ def get_accidents(
         params = []
         
         # 2. Map frontend filter values directly to your database columns
+        # if state is not None and state != 0:
+        #     query += ' AND a."ULAND" = %s'; params.append(state)
+        # if city is not None and city != 1000000:
+        #     query += ' AND a."UGEMEINDE" = %s'; params.append(city)
         if state is not None and state != 0:
-            query += ' AND a."ULAND" = %s'; params.append(state)
+        query += ' AND a."ULAND"::integer = %s'; params.append(state)
         if city is not None and city != 1000000:
-            query += ' AND a."UGEMEINDE" = %s'; params.append(city)
+        query += ' AND a."UGEMEINDE"::integer = %s'; params.append(city)
         if year is not None:
             query += " AND a.year = %s"; params.append(year)
         if month is not None:
@@ -211,9 +238,13 @@ def get_accidents(
         if hour is not None:
             query += " AND a.hour = %s"; params.append(hour)
         if accident_type is not None and accident_type != -1:
-            query += ' AND a."UART" = %s'; params.append(accident_type)
+            query += ' AND a."UART"::integer = %s'; params.append(accident_type)
         if category is not None and category != 0:
-            query += ' AND a."UKATEGORIE" = %s'; params.append(category)
+            query += ' AND a."UKATEGORIE"::integer = %s'; params.append(category)    
+        # if accident_type is not None and accident_type != -1:
+        #     query += ' AND a."UART" = %s'; params.append(accident_type)
+        # if category is not None and category != 0:
+        #     query += ' AND a."UKATEGORIE" = %s'; params.append(category)
             
         # 3. Dynamic vehicle type mappings matching your database binary columns
         if vehicle_type:
@@ -224,8 +255,8 @@ def get_accidents(
             if vehicle_clauses:
                 query += " AND (" + " OR ".join(vehicle_clauses) + ")"
                 
-        query += " LIMIT %s;"
-        params.append(limit)
+        # query += " LIMIT %s;"
+        # params.append(limit)
         
         # 4. Execute and fetch records efficiently
         cur.execute(query, tuple(params))
@@ -336,7 +367,7 @@ def get_filtered_coordinates(filters: MapFilterRequest):
     if filters.state is not None:
         query += ' AND c.state_name = %s'; params.append(filters.state)
         
-    query += " LIMIT 2000;" 
+    # query += " LIMIT 2000;" 
     try:
         cur.execute(query, tuple(params))
         records = cur.fetchall()
