@@ -237,6 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         final markers = <Marker>[];
         final polygonPoints = <LatLng>[];
+        _accidentMarkers =[];
 
         for (final item in data) {
           final lat = (item['lat'] as num).toDouble();
