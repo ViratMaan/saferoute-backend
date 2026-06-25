@@ -92890,8 +92890,10 @@ s=6
 return A.J(A.Ju(n),$async$e8)
 case 6:m=a4
 if(m.b===200){l=B.aR.d2(B.Q.d2(m.w))
-k=A.b([],t._I)
+a=t._I
+k=A.b([],a)
 j=A.b([],t.q_)
+o.r=A.b([],a)
 for(a=J.bm(l);a.p();){i=a.gM()
 h=A.e8(J.iB(i,"lat"))
 g=A.e8(J.iB(i,"lon"))
