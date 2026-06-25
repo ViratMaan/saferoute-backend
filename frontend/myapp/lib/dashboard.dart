@@ -18,7 +18,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final String _baseUrl = "https://4ln04wmsgg1x.shares.zrok.io";
+  final String _baseUrl = "https://saferoute-intelligence-api.onrender.com";
 
   final DateTime _yesterday = DateTime.now().subtract(const Duration(days: 1));
   final MapController _mapController = MapController();
