@@ -704,7 +704,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       appBar: AppBar(
-        title: const Text('DBW Accident Integration Hub'),
+        title: const Text('SafeRoute Intelligence'),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 10.0,
