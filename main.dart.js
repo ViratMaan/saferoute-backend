@@ -92867,7 +92867,7 @@ a1=o.as
 if(a1!==0)a0.m(0,"category",J.cn(a1))
 a1=o.Q
 if(a1!==-1)a0.m(0,"accident_type",J.cn(a1))
-d=A.e8("https://4ln04wmsgg1x.shares.zrok.io/accidents/filter").C_(a0)
+d=A.e8("https://saferoute-intelligence-api.onrender.com/accidents/filter").C_(a0)
 c=d.z
 if(c===$){a0=d.f
 a0=A.aW0(a0==null?"":a0)
@@ -92915,7 +92915,7 @@ case 1:return A.M(p.at(-1),r)}})
 return A.O($async$ej,r)},
 y6(){var s=0,r=A.P(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h
 var $async$y6=A.Q(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:i=A.e8("https://4ln04wmsgg1x.shares.zrok.io/accidentTypes")
+s=q}for(;;)switch(s){case 0:i=A.e8("https://saferoute-intelligence-api.onrender.com/accidentTypes")
 q=3
 s=6
 return A.J(A.Jx(i),$async$y6)
@@ -92947,7 +92947,7 @@ case 1:return A.M(p.at(-1),r)}})
 return A.O($async$y6,r)},
 y9(){var s=0,r=A.P(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h
 var $async$y9=A.Q(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:i=A.e8("https://4ln04wmsgg1x.shares.zrok.io/vehicleTypes")
+s=q}for(;;)switch(s){case 0:i=A.e8("https://saferoute-intelligence-api.onrender.com/vehicleTypes")
 q=3
 s=6
 return A.J(A.Jx(i),$async$y9)
@@ -92979,7 +92979,7 @@ case 1:return A.M(p.at(-1),r)}})
 return A.O($async$y9,r)},
 y5(){var s=0,r=A.P(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h
 var $async$y5=A.Q(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:i=A.e8("https://4ln04wmsgg1x.shares.zrok.io/categories")
+s=q}for(;;)switch(s){case 0:i=A.e8("https://saferoute-intelligence-api.onrender.com/categories")
 q=3
 s=6
 return A.J(A.Jx(i),$async$y5)
@@ -93010,7 +93010,7 @@ case 1:return A.M(p.at(-1),r)}})
 return A.O($async$y5,r)},
 yP(){var s=0,r=A.P(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g
 var $async$yP=A.Q(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:h=A.e8("https://4ln04wmsgg1x.shares.zrok.io/states")
+s=q}for(;;)switch(s){case 0:h=A.e8("https://saferoute-intelligence-api.onrender.com/states")
 q=3
 s=6
 return A.J(A.Jx(h),$async$yP)
@@ -93043,7 +93043,7 @@ case 1:return A.M(p.at(-1),r)}})
 return A.O($async$yP,r)},
 xp(){var s=0,r=A.P(t.H),q=1,p=[],o=this,n,m,l,k,j,i
 var $async$xp=A.Q(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:j=A.e8("https://4ln04wmsgg1x.shares.zrok.io/cities").C_(A.an(["state",J.cn(o.dx)],t.N,t.z))
+s=q}for(;;)switch(s){case 0:j=A.e8("https://saferoute-intelligence-api.onrender.com/cities").C_(A.an(["state",J.cn(o.dx)],t.N,t.z))
 q=3
 s=6
 return A.J(A.Jx(j),$async$xp)
