@@ -23,18 +23,18 @@ def get_state_name_from_ags(ags_str):
     return state_map.get(prefix, "Unknown")
 
 def run_full_etl():
-    print("🚀 Starting Multi-File SafeRoute Intelligence ETL Pipeline...")
+    print("Starting Multi-File SafeRoute Intelligence ETL Pipeline...")
     engine = create_engine(DB_CONNECTION_STRING)
 
     if not os.path.exists(ZIP_FILE_PATH):
-        print(f"❌ Error: Missing zip file source at {ZIP_FILE_PATH}")
+        print(f" Error: Missing zip file source at {ZIP_FILE_PATH}")
         return
 
     with zipfile.ZipFile(ZIP_FILE_PATH, 'r') as z:
         files = z.namelist()
         
         for file_name in files:
-            print(f"\n📦 Processing file element: {file_name}...")
+            print(f"\n Processing file element: {file_name}...")
             
             try:
                 # --- ROUTING & CLEANING STRATEGIES ---
@@ -102,19 +102,19 @@ def run_full_etl():
                     continue
 
                 # STREAM REFRESH INTO POSTGRESQL
-                print(f"📡 Refreshing {len(df)} rows into structural layer schema '{table_name}'...")
+                print(f"Refreshing {len(df)} rows into structural layer schema '{table_name}'...")
                 with engine.connect() as connection:
                     connection.execute(text(f"TRUNCATE TABLE {table_name} RESTART IDENTITY CASCADE;"))
                     connection.commit()
 
                 df.to_sql(name=table_name, con=engine, if_exists='append', index=False, chunksize=5000)
-                print(f"✅ Table structure '{table_name}' successfully built and active.")
+                print(f"Table structure '{table_name}' successfully built and active.")
 
             except Exception as file_err:
-                print(f"⚠️ Safe Skip: Processing failed on data element '{file_name}': {file_err}")
+                print(f"Safe Skip: Processing failed on data element '{file_name}': {file_err}")
                 continue
 
-    print("\n🏆 DATABASE FULLY ALIGNED: All real regional parameters map perfectly!")
+    print("\n DATABASE FULLY ALIGNED: All real regional parameters map perfectly!")
 
 if __name__ == "__main__":
     run_full_etl()

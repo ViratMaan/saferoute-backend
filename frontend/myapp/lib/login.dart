@@ -16,14 +16,14 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _passwordVisible = false;
-  bool _correctpasswordVisible = false;
+  bool _passwordVisible = true;
+  bool _correctpasswordVisible = true;
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   late final AnimationController _transitionController;
   late final Animation<double> _cardScale;
 
-  final String _baseUrl = 'https://saferoute-intelligence-api.onrender.com';
+  final String _baseUrl = 'https://4ln04wmsgg1x.shares.zrok.io';
   bool _showRegister = false;
   bool _isLoading = false;
   String? _authError;

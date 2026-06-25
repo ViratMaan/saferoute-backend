@@ -25,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static const LatLng _germanyCenter = LatLng(51.1657, 10.4515);
   List<Marker> _accidentMarkers = [];
   List<LatLng> _polygonPoints = [];
-  // raw coordinates from API: [lat, lon, severity, vehicleType?]
+  // raw coordinates from API: [lat, lon, severity, vehicleType?]   
   List<List<dynamic>> _accidentCoordinates = [];
 
   // vehicle type toggles
@@ -76,6 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   late final List<String> _yearOptions = [
+    'All Years',
     for (var y = 2018; y <= _yesterday.year; y++) y.toString(),
   ];
   final List<String> _monthOptions = [
