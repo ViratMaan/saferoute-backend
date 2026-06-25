@@ -173,7 +173,9 @@ def get_vehicle_types():
 
 vehicle_map = {item["id"]: item["column"] for item in vehicle_types}
 
-# ─── GLOBAL TRANSLATION DICTIONARY ──────────────────────────────────────────
+import csv
+
+# Maps your frontend 1-16 selection directly to the official German ULAND numbers in your file
 UI_TO_GERMAN_STATE = {
     1: 8,   # Baden-Württemberg
     2: 9,   # Bayern
@@ -206,84 +208,88 @@ def get_accidents(
     vehicle_type: List[str] = Query(None),
     limit: int = Query(2000, ge=1, le=5000)
 ):
+    target_uland = UI_TO_GERMAN_STATE.get(state) if state else None
+    filtered_pins = []
+    
+    # Define the exact path to your main 2023 coordinates data file
+    csv_path = os.path.join(DATA_DIR, "accident_per_location_2023.csv")
+    
+    if not os.path.exists(csv_path):
+        return []
+        
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # 1. Base query reading directly from database tables
-        query = """
-            SELECT a.lat, a.lon, a."UKATEGORIE", a.year, a.month, a.hour
-            FROM accidents a
-            WHERE a.lat IS NOT NULL AND a.lon IS NOT NULL
-        """
-        params = []
-        
-        # 2. Map frontend filter values directly with type casting and translation keys
-        if state is not None and state != 0:
-            actual_uland = UI_TO_GERMAN_STATE.get(state, state)
-            query += ' AND a."ULAND"::integer = %s'
-            params.append(actual_uland)
+        # Stream the file row-by-row instead of loading it into a massive Pandas object
+        with open(csv_path, mode="r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f, delimiter=";")
             
-        if city is not None and city != 1000000:
-            query += ' AND a."UGEMEINDE"::integer = %s'
-            params.append(city)
-            
-        if year is not None:
-            query += " AND a.year = %s"
-            params.append(year)
-        if month is not None:
-            query += " AND a.month = %s"
-            params.append(month)
-        if hour is not None:
-            query += " AND a.hour = %s"
-            params.append(hour)
-            
-        if accident_type is not None and accident_type != -1:
-            query += ' AND a."UART"::integer = %s'
-            params.append(accident_type)
-        if category is not None and category != 0:
-            query += ' AND a."UKATEGORIE"::integer = %s'
-            params.append(category)    
-            
-        # 3. Dynamic vehicle type mappings matching your database binary columns
-        if vehicle_type:
-            vehicle_clauses = []
-            for v in vehicle_type:
-                if int(v) in vehicle_map:
-                    vehicle_clauses.append(f"a.\"{vehicle_map[int(v)]}\" = 1")
-            if vehicle_clauses:
-                query += " AND (" + " OR ".join(vehicle_clauses) + ")"
+            for row in reader:
+                if len(filtered_pins) >= limit:
+                    break
+                    
+                # 1. Map State Filter Safely
+                if target_uland is not None:
+                    try:
+                        row_uland = int(float(row.get("ULAND", 0)))
+                        if row_uland != target_uland:
+                            continue
+                    except ValueError:
+                        continue
+                        
+                # 2. Map Category / Severity Filter Safely
+                if category is not None and category != 0:
+                    try:
+                        row_cat = int(float(row.get("UKATEGORIE", 0)))
+                        if row_cat != category:
+                            continue
+                    except ValueError:
+                        continue
+                        
+                # 3. Map Accident Type Filter Safely
+                if accident_type is not None and accident_type != -1:
+                    try:
+                        row_art = int(float(row.get("UART", 0)))
+                        if row_art != accident_type:
+                            continue
+                    except ValueError:
+                        continue
+
+                # 4. Map Vehicle Types Safely
+                if vehicle_type:
+                    match_vehicle = False
+                    for v in vehicle_type:
+                        col_name = vehicle_map.get(int(v))
+                        if col_name and row.get(col_name) == "1":
+                            match_vehicle = True
+                            break
+                    if not match_vehicle:
+                        continue
+
+                # Extract Coordinates and fix comma decimals
+                raw_lat = row.get("YGCSWGS84")
+                raw_lon = row.get("XGCSWGS84")
+                raw_sev = row.get("UKATEGORIE")
                 
-        query += " LIMIT %s;"
-        params.append(limit)
-        
-        # 4. Execute and fetch records efficiently
-        cur.execute(query, tuple(params))
-        records = cur.fetchall()
-        
-        cur.close()
-        conn.close()
-        
-        # Helper function to safely convert string coordinates to floats
-        def clean_float(val):
-            if val is None:
-                return 0.0
-            return float(str(val).replace(",", "."))
-        
-        # 5. Format payload output back to the Flutter frontend app structure
-        return [
-            {
-                "lat": clean_float(r[0]),
-                "lon": clean_float(r[1]),
-                "severity": int(r[2]) if r[2] is not None else 3,
-                "vehicleType": vehicle_type or []
-            }
-            for r in records
-        ]
+                if not raw_lat or not raw_lon:
+                    continue
+                    
+                try:
+                    lat_val = float(str(raw_lat).replace(",", "."))
+                    lon_val = float(str(raw_lon).replace(",", "."))
+                    sev_val = int(float(raw_sev)) if raw_sev else 3
+                    
+                    filtered_pins.append({
+                        "lat": lat_val,
+                        "lon": lon_val,
+                        "severity": sev_val,
+                        "vehicleType": vehicle_type or []
+                    })
+                except ValueError:
+                    continue
+                    
+        return filtered_pins
         
     except Exception as e:
-        print(f" Database filter query failed: {e}")
-        traceback.print_exc()
+        print(f" Streaming filter engine failed: {e}")
         return []
 
 @app.get("/", tags=["Health"])
