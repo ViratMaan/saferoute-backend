@@ -93623,7 +93623,7 @@ for(;;)switch(s){case 0:j=A
 s=3
 return A.J(A.qX(),$async$qg)
 case 3:o=j.cy(b.a.h(0,"access_token"))
-n=A.e8("https://4ln04wmsgg1x.shares.zrok.io/api/auth/login")
+n=A.e8("https://saferoute-intelligence-api.onrender.com/api/auth/login")
 m=t.N
 l=A.an(["Authorization","bearer "+A.k(o),"Content-Type","application/json"],m,m)
 s=4
@@ -93644,7 +93644,7 @@ case 1:return A.N(q,r)}})
 return A.O($async$qg,r)},
 yv(){var s=0,r=A.P(t.y),q,p=this,o,n,m,l
 var $async$yv=A.Q(function(a,b){if(a===1)return A.M(b,r)
-for(;;)switch(s){case 0:o=A.e8("https://4ln04wmsgg1x.shares.zrok.io/api/auth/register")
+for(;;)switch(s){case 0:o=A.e8("https://saferoute-intelligence-api.onrender.com/api/auth/register")
 n=t.N
 m=A.an(["Content-Type","application/json"],n,n)
 s=3
