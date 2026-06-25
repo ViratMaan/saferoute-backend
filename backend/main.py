@@ -208,7 +208,7 @@ def get_accidents(
     accident_type: int | None = None,
     category: int | None = None,
     vehicle_type: List[str] = Query(None),
-    # limit: int = Query(2000, ge=1, le=5000)
+    limit: int = Query(2000, ge=1, le=5000)
 ):
     try:
         conn = get_db_connection()
@@ -255,8 +255,8 @@ def get_accidents(
             if vehicle_clauses:
                 query += " AND (" + " OR ".join(vehicle_clauses) + ")"
                 
-        # query += " LIMIT %s;"
-        # params.append(limit)
+        query += " LIMIT %s;"
+        params.append(limit)
         
         # 4. Execute and fetch records efficiently
         cur.execute(query, tuple(params))
@@ -367,7 +367,7 @@ def get_filtered_coordinates(filters: MapFilterRequest):
     if filters.state is not None:
         query += ' AND c.state_name = %s'; params.append(filters.state)
         
-    # query += " LIMIT 2000;" 
+    query += " LIMIT 2000;" 
     try:
         cur.execute(query, tuple(params))
         records = cur.fetchall()
