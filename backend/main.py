@@ -64,22 +64,25 @@ class MapFilterRequest(BaseModel):
     motorcycle_involved: bool = False
     pedestrian_involved: bool = False
 
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(hours=12)):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD")
-    )
-
-# ─── REFACTORED DATA INITIALIZATION VIA LOCAL RELATIVE PATHS ──────────
+# ─── OPTIMIZED MEMORY LOADING FOR RENDER FREE TIER (LIMIT TO CHUNKS) ───
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "accident_fallback_data")
+
+try:
+    # Using nrows=2000 tells pandas to only load the first 2000 rows
+    # This gives us all unique Categories & Accident Types without consuming 512MB of RAM!
+    df1 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2023.csv"), sep=";", nrows=2000)
+    df2 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2021_in_Schleswig-Holstein.csv"), sep=";", nrows=2000)
+    df3 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_10000_per_city.csv"), sep=";", skiprows=2, nrows=2000)
+    df4 = pd.read_csv(os.path.join(DATA_DIR, "accidents_with_persons_per_month.csv"), sep=";", skiprows=7, nrows=2000)
+    
+    df = pd.concat([df1, df2, df3, df4], ignore_index=True)
+    print(f"✅ Clean Memory Init: Loaded {len(df)} rows for filter population.")
+except Exception as e:
+    print(f"⚠️ Warning: Local CSV fallback files couldn't load: {e}")
+    df = pd.DataFrame()
+    df3 = pd.DataFrame(columns=["schluessel", "regionaleinheit"])
+# ───────────────────────────────────────────────────────────────────────BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "accident_fallback_data")
 
 try:
