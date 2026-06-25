@@ -173,77 +173,7 @@ def get_vehicle_types():
 
 vehicle_map = {item["id"]: item["column"] for item in vehicle_types}
 
-# ─── DENSE GEOGRAPHIC ARRAYS ACROSS ALL 16 STATES ───────────────────────────
-PRESENTATION_MAP_DATA = {
-    1: [ # Baden-Württemberg
-        {"lat": 48.7758, "lon": 9.1829, "severity": 1}, {"lat": 48.7820, "lon": 9.1950, "severity": 2},
-        {"lat": 49.0069, "lon": 8.4037, "severity": 2}, {"lat": 49.3988, "lon": 8.6724, "severity": 1},
-        {"lat": 47.9990, "lon": 7.8421, "severity": 3}, {"lat": 48.4011, "lon": 9.9876, "severity": 2}
-    ],
-    2: [ # Bayern
-        {"lat": 48.1372, "lon": 11.5761, "severity": 1}, {"lat": 48.1450, "lon": 11.5630, "severity": 2},
-        {"lat": 49.4521, "lon": 11.0767, "severity": 3}, {"lat": 48.3705, "lon": 10.8978, "severity": 2},
-        {"lat": 49.0134, "lon": 12.1016, "severity": 1}, {"lat": 49.7913, "lon": 9.9534, "severity": 3}
-    ],
-    3: [ # Berlin
-        {"lat": 52.5200, "lon": 13.4049, "severity": 2}, {"lat": 52.5167, "lon": 13.3833, "severity": 1},
-        {"lat": 52.4986, "lon": 13.4069, "severity": 3}, {"lat": 52.5689, "lon": 13.4022, "severity": 2}
-    ],
-    4: [ # Brandenburg
-        {"lat": 52.3906, "lon": 13.0645, "severity": 1}, {"lat": 52.4010, "lon": 13.0480, "severity": 2},
-        {"lat": 51.7563, "lon": 14.3329, "severity": 3}, {"lat": 52.3471, "lon": 14.5506, "severity": 2}
-    ],
-    5: [ # Bremen
-        {"lat": 53.0793, "lon": 8.8017, "severity": 3}, {"lat": 53.0850, "lon": 8.8130, "severity": 1},
-        {"lat": 53.5396, "lon": 8.5809, "severity": 2}, {"lat": 53.5480, "lon": 8.5710, "severity": 3}
-    ],
-    6: [ # Hamburg
-        {"lat": 53.5511, "lon": 9.9937, "severity": 1}, {"lat": 53.5653, "lon": 9.9861, "severity": 2},
-        {"lat": 53.5430, "lon": 9.9510, "severity": 3}, {"lat": 53.5920, "lon": 10.0230, "severity": 1}
-    ],
-    7: [ # Hessen
-        {"lat": 50.1109, "lon": 8.6821, "severity": 2}, {"lat": 50.1250, "lon": 8.6510, "severity": 3},
-        {"lat": 50.0820, "lon": 8.2417, "severity": 1}, {"lat": 49.8728, "lon": 8.6512, "severity": 2}
-    ],
-    8: [ # Mecklenburg-Vorpommern
-        {"lat": 54.0924, "lon": 12.0991, "severity": 1}, {"lat": 54.1030, "lon": 12.1240, "severity": 2},
-        {"lat": 53.6294, "lon": 11.4132, "severity": 2}, {"lat": 54.0931, "lon": 13.3879, "severity": 1}
-    ],
-    9: [ # Niedersachsen
-        {"lat": 52.3759, "lon": 9.7320, "severity": 2}, {"lat": 52.3880, "lon": 9.7450, "severity": 1},
-        {"lat": 52.2689, "lon": 10.5268, "severity": 3}, {"lat": 51.5413, "lon": 9.9158, "severity": 3}
-    ],
-    10: [ # Nordrhein-Westfalen
-        {"lat": 51.2277, "lon": 6.7735, "severity": 1}, {"lat": 50.9375, "lon": 6.9603, "severity": 2},
-        {"lat": 51.5136, "lon": 7.4653, "severity": 3}, {"lat": 50.7374, "lon": 7.0982, "severity": 2}
-    ],
-    11: [ # Rheinland-Pfalz
-        {"lat": 49.9929, "lon": 8.2473, "severity": 3}, {"lat": 50.3569, "lon": 7.5890, "severity": 1},
-        {"lat": 49.7500, "lon": 6.6371, "severity": 2}, {"lat": 49.4447, "lon": 7.7491, "severity": 1}
-    ],
-    12: [ # Saarland
-        {"lat": 49.2402, "lon": 6.9969, "severity": 1}, {"lat": 49.2510, "lon": 6.9780, "severity": 2},
-        {"lat": 49.3260, "lon": 7.3369, "severity": 3}
-    ],
-    13: [ # Sachsen
-        {"lat": 51.0504, "lon": 13.7373, "severity": 2}, {"lat": 51.3397, "lon": 12.3731, "severity": 1},
-        {"lat": 50.8278, "lon": 12.9214, "severity": 3}, {"lat": 50.7186, "lon": 12.4961, "severity": 2}
-    ],
-    14: [ # Sachsen-Anhalt
-        {"lat": 52.1205, "lon": 11.6276, "severity": 3}, {"lat": 51.4970, "lon": 11.9688, "severity": 2},
-        {"lat": 51.8386, "lon": 12.2456, "severity": 1}
-    ],
-    15: [ # Schleswig-Holstein
-        {"lat": 54.3233, "lon": 10.1228, "severity": 1}, {"lat": 54.3350, "lon": 10.1410, "severity": 2},
-        {"lat": 53.8655, "lon": 10.6866, "severity": 2}, {"lat": 54.7937, "lon": 9.4470, "severity": 1}
-    ],
-    16: [ # Thüringen
-        {"lat": 50.9848, "lon": 11.0299, "severity": 2}, {"lat": 50.9271, "lon": 11.5892, "severity": 1},
-        {"lat": 50.9795, "lon": 11.3235, "severity": 3}
-    ]
-}
 
-# ─── PURE PYTHON CRASH-PROOF FILTER PIPELINE ROUTE ─────────────────────────
 @app.get("/accidents/filter")
 def get_accidents(
     state: int | None = None,
@@ -257,33 +187,69 @@ def get_accidents(
     vehicle_type: List[str] = Query(None),
     limit: int = Query(2000, ge=1, le=5000)
 ):
-    source_pins = []
-    if state is not None and state in PRESENTATION_MAP_DATA:
-        source_pins = PRESENTATION_MAP_DATA[state]
-    else:
-        for state_pins in PRESENTATION_MAP_DATA.values():
-            source_pins.extend(state_pins)
-
-    filtered_pins = []
-    for item in source_pins:
-        if category is not None and category != 0:
-            if item["severity"] != category:
-                continue
-                
-        if vehicle_type:
-            # Deterministic calculation using coordinate metrics to map vehicle states
-            mock_vehicle_pool = [str((int(item["lat"] * 100) % 5) + 1)]
-            if not any(v in mock_vehicle_pool for v in vehicle_type):
-                continue
-
-        filtered_pins.append({
-            "lat": item["lat"],
-            "lon": item["lon"],
-            "severity": item["severity"],
-            "vehicleType": vehicle_type or []
-        })
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
         
-    return filtered_pins[:limit]
+        # 1. Base query reading directly from your real database tables
+        query = """
+            SELECT a.lat, a.lon, a.category, a.year, a.month, a.hour
+            FROM accidents a
+            WHERE a.lat IS NOT NULL AND a.lon IS NOT NULL
+        """
+        params = []
+        
+        # 2. Map frontend filter values directly to your database columns
+        if state is not None and state != 0:
+            query += " AND a.\"ULAND\" = %s"; params.append(state)
+        if city is not None and city != 1000000:
+            query += " AND a.\"UGEMEINDE\" = %s"; params.append(city)
+        if year is not None:
+            query += " AND a.year = %s"; params.append(year)
+        if month is not None:
+            query += " AND a.month = %s"; params.append(month)
+        if hour is not None:
+            query += " AND a.hour = %s"; params.append(hour)
+        if accident_type is not None and accident_type != -1:
+            query += " AND a.\"UART\" = %s"; params.append(accident_type)
+        if category is not None and category != 0:
+            query += " AND a.\"UKATEGORIE\" = %s"; params.append(category)
+            
+        # 3. Dynamic vehicle type mappings matching your database binary columns
+        if vehicle_type:
+            vehicle_clauses = []
+            for v in vehicle_type:
+                if int(v) in vehicle_map:
+                    # Wraps original German column targets (like "IstRad", "IstPKW")
+                    vehicle_clauses.append(f"a.\"{vehicle_map[int(v)]}\" = 1")
+            if vehicle_clauses:
+                query += " AND (" + " OR ".join(vehicle_clauses) + ")"
+                
+        query += " LIMIT %s;"
+        params.append(limit)
+        
+        # 4. Execute and fetch records efficiently
+        cur.execute(query, tuple(params))
+        records = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        # 5. Format payload output back to the Flutter frontend app structure
+        return [
+            {
+                "lat": float(r[0]),
+                "lon": float(r[1]),
+                "severity": int(r[2]) if r[2] is not None else 3,
+                "vehicleType": vehicle_type or []
+            }
+            for r in records
+        ]
+        
+    except Exception as e:
+        print(f" Database filter query failed: {e}")
+        traceback.print_exc()
+        return []
 
 @app.get("/", tags=["Health"])
 def root():
