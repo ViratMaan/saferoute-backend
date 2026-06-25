@@ -173,7 +173,7 @@ def get_vehicle_types():
 
 vehicle_map = {item["id"]: item["column"] for item in vehicle_types}
 
-# Translate UI dropdown values to official German ULAND codes
+# ─── GLOBAL TRANSLATION DICTIONARY ──────────────────────────────────────────
 UI_TO_GERMAN_STATE = {
     1: 8,   # Baden-Württemberg
     2: 9,   # Bayern
@@ -193,10 +193,6 @@ UI_TO_GERMAN_STATE = {
     16: 16, # Thüringen
 }
 
-if state is not None and state != 0:
-    actual_uland = UI_TO_GERMAN_STATE.get(state, state)
-    query += ' AND a."ULAND"::integer = %s'; params.append(actual_uland)
-
 @app.get("/accidents/filter")
 def get_accidents(
     state: int | None = None,
@@ -214,7 +210,7 @@ def get_accidents(
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Base query reading directly from your real database tables
+        # 1. Base query reading directly from database tables
         query = """
             SELECT a.lat, a.lon, a."UKATEGORIE", a.year, a.month, a.hour
             FROM accidents a
@@ -222,29 +218,32 @@ def get_accidents(
         """
         params = []
         
-        # 2. Map frontend filter values directly to your database columns
-        # if state is not None and state != 0:
-        #     query += ' AND a."ULAND" = %s'; params.append(state)
-        # if city is not None and city != 1000000:
-        #     query += ' AND a."UGEMEINDE" = %s'; params.append(city)
+        # 2. Map frontend filter values directly with type casting and translation keys
         if state is not None and state != 0:
-        query += ' AND a."ULAND"::integer = %s'; params.append(state)
+            actual_uland = UI_TO_GERMAN_STATE.get(state, state)
+            query += ' AND a."ULAND"::integer = %s'
+            params.append(actual_uland)
+            
         if city is not None and city != 1000000:
-        query += ' AND a."UGEMEINDE"::integer = %s'; params.append(city)
+            query += ' AND a."UGEMEINDE"::integer = %s'
+            params.append(city)
+            
         if year is not None:
-            query += " AND a.year = %s"; params.append(year)
+            query += " AND a.year = %s"
+            params.append(year)
         if month is not None:
-            query += " AND a.month = %s"; params.append(month)
+            query += " AND a.month = %s"
+            params.append(month)
         if hour is not None:
-            query += " AND a.hour = %s"; params.append(hour)
+            query += " AND a.hour = %s"
+            params.append(hour)
+            
         if accident_type is not None and accident_type != -1:
-            query += ' AND a."UART"::integer = %s'; params.append(accident_type)
+            query += ' AND a."UART"::integer = %s'
+            params.append(accident_type)
         if category is not None and category != 0:
-            query += ' AND a."UKATEGORIE"::integer = %s'; params.append(category)    
-        # if accident_type is not None and accident_type != -1:
-        #     query += ' AND a."UART" = %s'; params.append(accident_type)
-        # if category is not None and category != 0:
-        #     query += ' AND a."UKATEGORIE" = %s'; params.append(category)
+            query += ' AND a."UKATEGORIE"::integer = %s'
+            params.append(category)    
             
         # 3. Dynamic vehicle type mappings matching your database binary columns
         if vehicle_type:
@@ -271,7 +270,7 @@ def get_accidents(
                 return 0.0
             return float(str(val).replace(",", "."))
         
-        # 5. Format payload output with proper fallback data parsing
+        # 5. Format payload output back to the Flutter frontend app structure
         return [
             {
                 "lat": clean_float(r[0]),
@@ -344,7 +343,6 @@ def get_filtered_coordinates(filters: MapFilterRequest):
     from psycopg2.extras import RealDictCursor
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
-    # CASE SENSITIVITY FIX: Wrap raw database identifiers in exact double quotes
     query = """
         SELECT a.lat, a.lon, a.category, a.year, a.month, a.hour
         FROM accidents a
@@ -380,4 +378,4 @@ def get_filtered_coordinates(filters: MapFilterRequest):
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
     finally:
         cur.close()
-        conn.close() 
+        conn.close()
