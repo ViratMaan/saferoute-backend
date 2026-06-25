@@ -11,24 +11,24 @@ DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "") 
 
 def setup_database():
-    print("🔌 Connecting to master PostgreSQL engine...")
+    print("Connecting to master PostgreSQL engine...")
     try:
         conn = psycopg2.connect(
             dbname="postgres",
-            user=DB_USER,
+            user=DB_USER,       
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
         )
         conn.autocommit = True
         cur = conn.cursor()
         
         cur.execute(f"CREATE DATABASE {DB_NAME};")
-        print(f"✨ Database '{DB_NAME}' successfully created!")
+        print(f"Database '{DB_NAME}' successfully created!")
     except psycopg2.errors.DuplicateDatabase:
-        print(f"📦 Database '{DB_NAME}' already exists. Moving to table schema generation...")
+        print(f"Database '{DB_NAME}' already exists. Moving to table schema generation...")
     except Exception as e:
-        print(f"❌ Master engine connection failure: {e}")
+        print(f"Master engine connection failure: {e}")
         return
     finally:
         if 'cur' in locals(): cur.close()
@@ -45,7 +45,7 @@ def setup_database():
         )
         cur = conn.cursor()
     except Exception as e:
-        print(f"❌ Failed to log into database '{DB_NAME}': {e}")
+        print(f"Failed to log into database '{DB_NAME}': {e}")
         return
     
     create_tables_query = """
@@ -108,9 +108,9 @@ def setup_database():
     try:
         cur.execute(create_tables_query)
         conn.commit()
-        print("🚀 Success! All table targets are safely constructed and typed inside your relational schema.")
+        print("Success! All table targets are safely constructed and typed inside your relational schema.")
     except Exception as e:
-        print(f"❌ Database blueprint failure: {e}")
+        print(f"Database blueprint failure: {e}")
     finally:
         cur.close()
         conn.close()
