@@ -19,6 +19,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://viratmaan.github.io",
+        "http://localhost:5500",  # For local testing
+        "http://127.0.0.1:5500"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows POST, GET, OPTIONS, etc.
+    allow_headers=["*"],  # Allows Content-Type and custom auth headers
+)
+
 # Fix for CORS errors when frontend connects
 app.add_middleware(
     CORSMiddleware,
@@ -64,7 +76,6 @@ class MapFilterRequest(BaseModel):
     motorcycle_involved: bool = False
     pedestrian_involved: bool = False
 
-# ─── OPTIMIZED MEMORY LOADING FOR RENDER FREE TIER (LIMIT TO CHUNKS) ───
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "accident_fallback_data")
 
