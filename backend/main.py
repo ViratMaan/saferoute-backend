@@ -193,7 +193,7 @@ def get_accidents(
         
         # 1. Base query reading directly from your real database tables
         query = """
-            SELECT a.lat, a.lon, a.category, a.year, a.month, a.hour
+            SELECT a.lat, a.lon, a."UKATEGORIE", a.year, a.month, a.hour
             FROM accidents a
             WHERE a.lat IS NOT NULL AND a.lon IS NOT NULL
         """
@@ -201,9 +201,9 @@ def get_accidents(
         
         # 2. Map frontend filter values directly to your database columns
         if state is not None and state != 0:
-            query += " AND a.\"ULAND\" = %s"; params.append(state)
+            query += ' AND a."ULAND" = %s'; params.append(state)
         if city is not None and city != 1000000:
-            query += " AND a.\"UGEMEINDE\" = %s"; params.append(city)
+            query += ' AND a."UGEMEINDE" = %s'; params.append(city)
         if year is not None:
             query += " AND a.year = %s"; params.append(year)
         if month is not None:
@@ -211,16 +211,15 @@ def get_accidents(
         if hour is not None:
             query += " AND a.hour = %s"; params.append(hour)
         if accident_type is not None and accident_type != -1:
-            query += " AND a.\"UART\" = %s"; params.append(accident_type)
+            query += ' AND a."UART" = %s'; params.append(accident_type)
         if category is not None and category != 0:
-            query += " AND a.\"UKATEGORIE\" = %s"; params.append(category)
+            query += ' AND a."UKATEGORIE" = %s'; params.append(category)
             
         # 3. Dynamic vehicle type mappings matching your database binary columns
         if vehicle_type:
             vehicle_clauses = []
             for v in vehicle_type:
                 if int(v) in vehicle_map:
-                    # Wraps original German column targets (like "IstRad", "IstPKW")
                     vehicle_clauses.append(f"a.\"{vehicle_map[int(v)]}\" = 1")
             if vehicle_clauses:
                 query += " AND (" + " OR ".join(vehicle_clauses) + ")"
@@ -235,11 +234,17 @@ def get_accidents(
         cur.close()
         conn.close()
         
-        # 5. Format payload output back to the Flutter frontend app structure
+        # Helper function to safely convert string coordinates to floats
+        def clean_float(val):
+            if val is None:
+                return 0.0
+            return float(str(val).replace(",", "."))
+        
+        # 5. Format payload output with proper fallback data parsing
         return [
             {
-                "lat": float(r[0]),
-                "lon": float(r[1]),
+                "lat": clean_float(r[0]),
+                "lon": clean_float(r[1]),
                 "severity": int(r[2]) if r[2] is not None else 3,
                 "vehicleType": vehicle_type or []
             }
