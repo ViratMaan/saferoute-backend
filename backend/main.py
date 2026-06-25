@@ -81,8 +81,8 @@ DATA_DIR = os.path.join(BASE_DIR, "accident_fallback_data")
 
 # ─── MEMORY STRATEGY: LIGHT ALLOCATIONS FOR INITIALIZATION ──────────────────
 try:
-    df1 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2023.csv"), sep=";", nrows=10000)
-    df2 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2021_in_Schleswig-Holstein.csv"), sep=";", nrows=5000)
+    df1 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2023.csv"), sep=";", nrows=150000)
+    df2 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_location_2021_in_Schleswig-Holstein.csv"), sep=";", nrows=3000)
     df = pd.concat([df1, df2], ignore_index=True)
     
     df3 = pd.read_csv(os.path.join(DATA_DIR, "accident_per_10000_per_city.csv"), sep=";", skiprows=2, nrows=1000)
