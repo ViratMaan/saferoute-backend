@@ -25,7 +25,7 @@ class DwbApiTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DBW Accident Integration Hub',
+      title: 'SafeRoute Intelligence',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
